@@ -240,6 +240,9 @@ const mondayOf=d=>{const x=new Date(d.getFullYear(),d.getMonth(),d.getDate());co
 const MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 const daysIn=(a,b)=>Math.round((b-a)/DAY);
 const fmtDate=d=>`${pad(d.getDate())} ${MON[d.getMonth()]} ${String(d.getFullYear()).slice(2)}`;
+function isoWeek(d){const x=new Date(d.getFullYear(),d.getMonth(),d.getDate());const day=(x.getDay()+6)%7;
+  x.setDate(x.getDate()-day+3);const ft=new Date(x.getFullYear(),0,4);const fd=(ft.getDay()+6)%7;
+  ft.setDate(ft.getDate()-fd+3);return 1+Math.round((x-ft)/(7*DAY));}
 const isMobile=()=>window.matchMedia("(max-width:760px)").matches;
 
 /* ---------------- state ---------------- */
@@ -305,7 +308,7 @@ function buildAxis(){
     while(d<projEnd){cell("bot"+(d.getDate()%2===0?" alt":""),xOf(d),px,d.getDate());if(d.getDay()===1)line(xOf(d),false);d=addDays(d,1);}
   }else if(z==="week"){
     let w=mondayOf(projStart),k=0;
-    while(w<projEnd){const a=Math.max(w,projStart);cell("bot"+(k%2?" alt":""),xOf(a),7*px,w.getDate());w=addDays(w,7);k++;}
+    while(w<projEnd){const a=Math.max(w,projStart);cell("bot"+(k%2?" alt":""),xOf(a),7*px,"W"+pad(isoWeek(w)));w=addDays(w,7);k++;}
   }else if(z==="month"){
     let m=startOfMonth(projStart),k=0;
     while(m<projEnd){const next=addMonths(m,1),a=Math.max(m,projStart),b=Math.min(next,projEnd);
