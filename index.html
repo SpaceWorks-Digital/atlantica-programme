@@ -214,6 +214,7 @@ const PHASES = [
   {id:"p2", riba:"RIBA 2 · Concept Design",         oa:"Estudo Prévio",               col:"#38bdf8"},
   {id:"p3", riba:"RIBA 3 · Spatial Coordination",   oa:"Anteprojeto / Licenciamento", col:"#818cf8"},
   {id:"p4", riba:"RIBA 4 · Technical Design",        oa:"Projeto de Execução",         col:"#a78bfa"},
+  {id:"pt", riba:"Tender · Procurement",             oa:"Concurso / Contratação",      col:"#eab308"},
   {id:"p5", riba:"RIBA 5 · Manufacturing & Construction", oa:"Assistência Técnica / Obra", col:"#fb923c"},
   {id:"p6", riba:"RIBA 6 · Handover",                oa:"Conclusão / Receção",         col:"#34d399"},
   {id:"p7", riba:"RIBA 7 · Use",                     oa:"Uso / Pós-Ocupação",          col:"#2dd4bf"},
@@ -252,12 +253,12 @@ let state=null;
 function buildSeed(){
   const tasks={};
   const plan={
-    masterplan:{s:"2026-01",d:[3,3,4,5,5,36,4,9]},
-    hub:       {s:"2026-03",d:[2,3,5,5,6,21,4,14]},
-    pool:      {s:"2026-05",d:[2,3,5,5,6,20,4,12]},
-    hotel:     {s:"2026-08",d:[2,3,5,6,7,26,5,10]},
-    apartments:{s:"2027-01",d:[2,3,5,6,7,28,5,8]},
-    landscape: {s:"2026-06",d:[2,3,4,4,5,30,4,10]},
+    masterplan:{s:"2026-01",d:[3,3,4,5,5,3,36,4,9]},
+    hub:       {s:"2026-03",d:[2,3,5,5,6,3,21,4,14]},
+    pool:      {s:"2026-05",d:[2,3,5,5,6,3,20,4,12]},
+    hotel:     {s:"2026-08",d:[2,3,5,6,7,3,26,5,10]},
+    apartments:{s:"2027-01",d:[2,3,5,6,7,3,28,5,8]},
+    landscape: {s:"2026-06",d:[2,3,4,4,5,2,30,4,10]},
   };
   for(const el of ELEMENTS){
     const p=plan[el.id]; let cur=parse(p.s+"-01");
@@ -274,7 +275,15 @@ function defaults(){
   return {title:"Wavepool Cascais — Programme", start:"2025-10-01", end:"2032-06-30",
           zoom:"month", collapsed:[], hideDates:false, tasks:buildSeed()};
 }
-function load(){try{const j=JSON.parse(localStorage.getItem(LS_KEY));if(j&&j.tasks)return j;}catch(e){}return defaults();}
+function migrate(s){ // add the Tender phase to programmes saved before it existed (between Technical & Construction)
+  if(!s.tasks)return s;
+  for(const el of ELEMENTS){const tk=el.id+"|pt";if(s.tasks[tk])continue;
+    const tech=s.tasks[el.id+"|p4"],con=s.tasks[el.id+"|p5"];
+    if(tech&&con){let a=parse(tech.e),b=parse(con.s);if(b<=a)b=addMonths(a,3);s.tasks[tk]={s:iso(a),e:iso(b)};}
+    else if(tech){s.tasks[tk]={s:tech.e,e:iso(addMonths(parse(tech.e),3))};}}
+  return s;
+}
+function load(){try{const j=JSON.parse(localStorage.getItem(LS_KEY));if(j&&j.tasks)return migrate(j);}catch(e){}return defaults();}
 function save(){try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){}}
 
 /* ---------------- geometry ---------------- */
