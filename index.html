@@ -74,6 +74,12 @@ body{
 .axis .bot{top:50%;color:var(--ink3)}
 .axis .bot.alt{background:#12161e}
 .body{position:relative}
+.rows{position:relative}
+.drop-ind{position:absolute;left:0;right:0;height:3px;background:var(--accent);box-shadow:0 0 10px var(--accent);border-radius:2px;z-index:50;pointer-events:none}
+.elrow.drag-src{opacity:.4}
+body.reordering{cursor:grabbing;user-select:none}
+.drag{cursor:grab;color:var(--ink3);width:15px;text-align:center;flex:0 0 auto;touch-action:none;font-size:12px;user-select:none}
+.drag:hover{color:var(--ink)}
 .gridlayer{position:absolute;top:0;left:var(--lw);height:100%;pointer-events:none;z-index:0}
 .gridlayer .gl{position:absolute;top:0;height:100%;width:1px;background:var(--grid)}
 .gridlayer .gl.s{background:var(--grid-strong)}
@@ -134,6 +140,7 @@ body{
 @media (max-width:760px){
   :root{ --name:130px; --date:62px; --head-h:50px; --el-h:46px; --ph-h:42px; }
   .brand .s{display:none}
+  .dot{display:none}
   #title{max-width:60vw}
   .daterange{order:5}
   .tools{gap:7px}
@@ -146,6 +153,7 @@ body{
   .bar{height:24px}
   .bar .gripL,.bar .gripR{width:15px}
   .chev{width:26px}
+  .drag{width:24px;font-size:15px}
 }
 @media print{
   body{overflow:visible;background:#fff;color:#000;height:auto;display:block}
@@ -273,7 +281,7 @@ function buildSeed(){
 }
 function defaults(){
   return {title:"Wavepool Cascais — Programme", start:"2025-10-01", end:"2032-06-30",
-          zoom:"month", collapsed:[], hideDates:false, tasks:buildSeed()};
+          zoom:"month", collapsed:[], hideDates:false, order:ELEMENTS.map(e=>e.id), tasks:buildSeed()};
 }
 function migrate(s){ // add the Tender phase to programmes saved before it existed (between Technical & Construction)
   if(!s.tasks)return s;
@@ -281,6 +289,10 @@ function migrate(s){ // add the Tender phase to programmes saved before it exist
     const tech=s.tasks[el.id+"|p4"],con=s.tasks[el.id+"|p5"];
     if(tech&&con){let a=parse(tech.e),b=parse(con.s);if(b<=a)b=addMonths(a,3);s.tasks[tk]={s:iso(a),e:iso(b)};}
     else if(tech){s.tasks[tk]={s:tech.e,e:iso(addMonths(parse(tech.e),3))};}}
+  // element order: default, then ensure every element present exactly once
+  if(!Array.isArray(s.order))s.order=ELEMENTS.map(e=>e.id);
+  for(const e of ELEMENTS)if(!s.order.includes(e.id))s.order.push(e.id);
+  s.order=s.order.filter(id=>ELEMENTS.some(e=>e.id===id));
   return s;
 }
 function load(){try{const j=JSON.parse(localStorage.getItem(LS_KEY));if(j&&j.tasks)return migrate(j);}catch(e){}return defaults();}
@@ -334,6 +346,7 @@ function buildAxis(){
 }
 
 /* ---------------- rows ---------------- */
+function orderedElements(){return state.order.map(id=>ELEMENTS.find(e=>e.id===id)).filter(Boolean);}
 function elTasks(elId){const l=[];for(const ph of PHASES){const t=state.tasks[elId+"|"+ph.id];if(t)l.push(t);}return l;}
 function elSpan(elId){const ts=elTasks(elId);if(!ts.length)return null;let a=parse(ts[0].s),b=parse(ts[0].e);
   for(const t of ts){const s=parse(t.s),e=parse(t.e);if(s<a)a=s;if(e>b)b=e;}return{a,b};}
@@ -342,11 +355,11 @@ function render(){
   recalc();buildAxis();
   const rows=document.getElementById("rows");rows.innerHTML="";
   const collapsed=new Set(state.collapsed);
-  for(const el of ELEMENTS){
+  for(const el of orderedElements()){
     const open=!collapsed.has(el.id),sp=elSpan(el.id);
     const er=document.createElement("div");er.className="row elrow";
     er.innerHTML=`<div class="rowhead">
-        <div class="label"><span class="chev ${open?"open":""}" data-el="${el.id}">▶</span>
+        <div class="label"><span class="drag" data-eldrag="${el.id}" title="Drag to reorder">⠿</span><span class="chev ${open?"open":""}" data-el="${el.id}">▶</span>
           <span class="dot" style="background:${el.col}"></span>
           <span class="elname">${el.name}</span></div>
         <div class="cstart">${sp?fmtDate(sp.a):"—"}</div>
@@ -366,6 +379,7 @@ function render(){
       state.collapsed = collapsed.has(el.id) ? state.collapsed.filter(x=>x!==el.id) : [...state.collapsed,el.id];
       save();render();
     });
+    attachReorder(er.querySelector(".drag"),el.id);
     if(!open)continue;
     for(const ph of PHASES){
       const key=el.id+"|"+ph.id,t=state.tasks[key];
@@ -390,6 +404,37 @@ function render(){
   }
 }
 
+/* ---------------- reorder elements (vertical drag) ---------------- */
+function attachReorder(handle,elId){
+  if(!handle)return;
+  handle.addEventListener("pointerdown",e=>{
+    e.preventDefault();e.stopPropagation();
+    handle.setPointerCapture(e.pointerId);
+    document.body.classList.add("reordering");
+    const rowsEl=document.getElementById("rows");
+    const srcRow=handle.closest(".elrow");if(srcRow)srcRow.classList.add("drag-src");
+    const ind=document.createElement("div");ind.className="drop-ind";rowsEl.appendChild(ind);
+    let target=null;
+    const place=y=>{
+      const els=[...document.querySelectorAll(".elrow")];
+      let idx=els.length;
+      for(let i=0;i<els.length;i++){const r=els[i].getBoundingClientRect();if(y<r.top+r.height/2){idx=i;break;}}
+      target=idx;
+      ind.style.top=((idx>=els.length?rowsEl.offsetHeight:els[idx].offsetTop)-1)+"px";
+    };
+    place(e.clientY);
+    const move=ev=>place(ev.clientY);
+    const up=ev=>{
+      try{handle.releasePointerCapture(e.pointerId);}catch(_){}
+      handle.removeEventListener("pointermove",move);handle.removeEventListener("pointerup",up);
+      ind.remove();document.body.classList.remove("reordering");if(srcRow)srcRow.classList.remove("drag-src");
+      const order=[...state.order],cur=order.indexOf(elId);let ti=(target==null?cur:target);
+      order.splice(cur,1);if(ti>cur)ti--;ti=Math.max(0,Math.min(order.length,ti));order.splice(ti,0,elId);
+      state.order=order;save();render();
+    };
+    handle.addEventListener("pointermove",move);handle.addEventListener("pointerup",up);
+  });
+}
 function phOf(key){return PHASES.find(p=>p.id===key.split("|")[1]);}
 function elOf(key){return ELEMENTS.find(e=>e.id===key.split("|")[0]);}
 const shortPhase=ph=>ph.riba.split("·")[0].trim();
