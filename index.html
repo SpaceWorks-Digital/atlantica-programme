@@ -821,7 +821,8 @@ function exportPdf(){
   const inner=document.getElementById("inner");
   const mm=96/25.4,margin=8*mm;
   const pageW=1189*mm-2*margin,pageH=841*mm-2*margin-90; // A0 landscape minus margins (and header allowance)
-  const scale=Math.min(pageW/inner.scrollWidth,pageH/inner.scrollHeight,1)*0.98;
+  // Scale to fill the sheet (allow upscaling so a short/collapsed schedule isn't stranded top-left)
+  const scale=Math.min(pageW/inner.scrollWidth,pageH/inner.scrollHeight)*0.98;
   document.documentElement.style.setProperty("--pdf-scale",scale);
   const st=document.createElement("style");st.id="pdfPageStyle";
   st.textContent="@page{size:1189mm 841mm;margin:8mm;}"; // A0 landscape
