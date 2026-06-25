@@ -212,7 +212,7 @@ body.hide-dates .cstart,body.hide-dates .cend,body.hide-dates .corner .dt{displa
   </div>
   <div class="spacer"></div>
   <div class="tools">
-    <button class="btn" id="themeToggle" title="Toggle light / dark mode">☾ Dark</button>
+    <button class="btn" id="themeToggle" title="Toggle light / dark mode">☀ Light</button>
     <div class="seg" id="zoomSeg">
       <button data-z="day">Day</button>
       <button data-z="week">Week</button>
@@ -715,7 +715,7 @@ function buildLegend(){const L=document.getElementById("legend");L.innerHTML="";
   const hint=document.createElement("div");hint.className="hint";hint.textContent="drag = move · edge = resize · tap = edit · double-tap empty = add";L.appendChild(hint);}
 function setZoom(z){state.zoom=z;[...document.querySelectorAll("#zoomSeg button")].forEach(b=>b.classList.toggle("on",b.dataset.z===z));save();render();}
 function applyTheme(){const light=state.theme==="light";document.body.classList.toggle("light",light);
-  const b=document.getElementById("themeToggle");if(b)b.textContent=light?"☀ Light":"☾ Dark";}
+  const b=document.getElementById("themeToggle");if(b)b.textContent=light?"☾ Dark":"☀ Light";}
 function scrollToToday(){const n=new Date(),tt=new Date(n.getFullYear(),n.getMonth(),n.getDate());
   if(tt>=projStart&&tt<=projEnd)document.getElementById("scroll").scrollLeft=xOf(tt)-200;}
 
