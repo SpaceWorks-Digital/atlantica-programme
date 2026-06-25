@@ -434,6 +434,36 @@ function spanOf(list){if(!list.length)return null;let a=parse(list[0].s),b=parse
 function elSpan(gid,elId){return spanOf(phaseTasks(gid,elId));}
 function groupSpan(gid){let all=[];for(const el of ELEMENTS)all=all.concat(phaseTasks(gid,el.id));return spanOf(all);}
 
+/* ---------------- RIBA 5 (design) <-> CONSTRUCTION link ----------------
+   The design RIBA 5 bar and the element's construction phases describe the
+   same construction window, so they are kept in sync in both directions. */
+const isLinked=key=>{const p=key.split("|");return (p[0]==="design"&&p[2]==="p5")||p[0]==="construction";};
+/* design RIBA 5 changed -> fit the construction phases into the new window (preserve relative layout) */
+function rescaleConstruction(elId){
+  const p5=state.tasks[tkey("design",elId,"p5")];if(!p5)return;
+  const ns=parse(p5.s).getTime(),ne=parse(p5.e).getTime();
+  const cur=elSpan("construction",elId);
+  if(!cur){const cs=seedConstruction(parse(p5.s),parse(p5.e));for(const cid in cs)state.tasks[tkey("construction",elId,cid)]=cs[cid];return;}
+  const os=cur.a.getTime(),oe=cur.b.getTime(),oldSpan=Math.max(1,oe-os),newSpan=Math.max(1,ne-ns);
+  for(const ph of CONSTRUCTION_PHASES){
+    const t=state.tasks[tkey("construction",elId,ph.id)];if(!t)continue;
+    const ts=parse(t.s).getTime(),te=parse(t.e).getTime();
+    t.s=iso(new Date(Math.round(ns+(ts-os)/oldSpan*newSpan)));
+    t.e=iso(new Date(Math.round(ns+(te-os)/oldSpan*newSpan)));
+  }
+}
+/* a construction phase changed -> RIBA 5 envelopes the whole construction span */
+function syncP5FromConstruction(elId){
+  const sp=elSpan("construction",elId);if(!sp)return;
+  const k=tkey("design",elId,"p5"),t=state.tasks[k];
+  if(t){t.s=iso(sp.a);t.e=iso(sp.b);}else state.tasks[k]={s:iso(sp.a),e:iso(sp.b)};
+}
+function applyLink(key){
+  const p=key.split("|");
+  if(p[0]==="design"&&p[2]==="p5")rescaleConstruction(p[1]);
+  else if(p[0]==="construction")syncP5FromConstruction(p[1]);
+}
+
 /* ---------------- rows ---------------- */
 function toggleCollapse(key){const c=new Set(state.collapsed);if(c.has(key))c.delete(key);else c.add(key);state.collapsed=[...c];save();render();}
 
@@ -584,7 +614,8 @@ function attachDrag(bar,key,ph,el){
       bar.classList.remove("dragging");try{bar.releasePointerCapture(e.pointerId);}catch(_){}
       bar.removeEventListener("pointermove",move);bar.removeEventListener("pointerup",up);
       if(!moved&&Date.now()-t0<450){openPopover(bar,key,ph,el);return;}
-      save();renderSpans(gid,el.id);
+      if(isLinked(key)){applyLink(key);save();render();}
+      else{save();renderSpans(gid,el.id);}
     };
     bar.addEventListener("pointermove",move);bar.addEventListener("pointerup",up);
   });
@@ -607,19 +638,19 @@ function updateRowDates(key,t){const cells=document.querySelectorAll(`[data-edit
 function createTaskAt(key,ev){
   const track=ev.currentTarget.closest(".track")||ev.currentTarget;const r=track.getBoundingClientRect();
   const day=Math.round((ev.clientX-r.left)/px);const s=addDays(projStart,Math.max(0,day));let e=addMonths(s,3);
-  if(e>projEnd)e=projEnd;state.tasks[key]={s:iso(s),e:iso(e)};save();render();
+  if(e>projEnd)e=projEnd;state.tasks[key]={s:iso(s),e:iso(e)};applyLink(key);save();render();
 }
 function createTaskDefault(key){
   const n=new Date(),tt=new Date(n.getFullYear(),n.getMonth(),1);
   let s=(tt>projStart&&tt<projEnd)?tt:addMonths(projStart,1);let e=addMonths(s,3);if(e>projEnd)e=projEnd;
-  state.tasks[key]={s:iso(s),e:iso(e)};save();render();
+  state.tasks[key]={s:iso(s),e:iso(e)};applyLink(key);save();render();
 }
 let popEl=null;
 function openPopover(bar,key,ph,el){
   closePopover();const t=state.tasks[key];if(!t)return;const g=grpOf(key);
   const p=document.createElement("div");p.className="pop";popEl=p;
   p.innerHTML=`<div class="grab"></div><h4>${el.name}</h4>
-    <div class="meta">${g?g.name+" · ":""}${ph.t1}${ph.t2?" — "+ph.t2:""}</div>
+    <div class="meta">${g?g.name+" · ":""}${ph.t1}${ph.t2?" — "+ph.t2:""}${key.split("|")[2]==="p5"?" · ↔ linked to Construction":key.split("|")[0]==="construction"?" · ↔ linked to RIBA 5":""}</div>
     <div class="row2"><label>Label</label><input type="text" id="pLabel" value="${(t.label||"").replace(/"/g,"&quot;")}" placeholder="${shortPhase(ph)}"></div>
     <div class="row2"><label>Start</label><input type="date" id="pStart" value="${t.s}"></div>
     <div class="row2"><label>End</label><input type="date" id="pEnd" value="${t.e}"></div>
@@ -636,8 +667,8 @@ function openPopover(bar,key,ph,el){
     p.style.top=Math.max(8,Math.min(r.bottom+6,window.innerHeight-220))+"px";
   }
   p.querySelector("#pOk").onclick=()=>{const s=p.querySelector("#pStart").value,e=p.querySelector("#pEnd").value,l=p.querySelector("#pLabel").value.trim();
-    if(s&&e&&parse(e)>parse(s)){t.s=s;t.e=e;t.label=l||undefined;save();render();}closePopover();};
-  p.querySelector("#pDel").onclick=()=>{delete state.tasks[key];save();render();closePopover();};
+    if(s&&e&&parse(e)>parse(s)){t.s=s;t.e=e;t.label=l||undefined;applyLink(key);save();render();}closePopover();};
+  p.querySelector("#pDel").onclick=()=>{delete state.tasks[key];applyLink(key);save();render();closePopover();};
   setTimeout(()=>document.addEventListener("pointerdown",outside,true),0);
 }
 function outside(e){if(popEl&&!popEl.contains(e.target))closePopover();}
