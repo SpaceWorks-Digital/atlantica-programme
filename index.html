@@ -232,6 +232,7 @@ body.hide-dates .cstart,body.hide-dates .cend,body.hide-dates .corner .dt{displa
     <button class="btn" id="todayBtn">Today</button>
     <button class="btn ghost" id="exportXlsx">Export Excel</button>
     <button class="btn ghost" id="exportPdf">Export PDF</button>
+    <button class="btn ghost" id="backupBtn" title="Download a JSON backup you can re-import">Backup</button>
     <button class="btn ghost" id="importBtn">Import</button>
     <button class="btn ghost" id="printBtn">Print</button>
     <button class="btn warn" id="resetBtn">Reset</button>
@@ -846,6 +847,7 @@ function init(){
     {state=defaults();save();applyTheme();syncInputs();render();scrollToToday();}};
   document.getElementById("exportXlsx").onclick=exportExcel;
   document.getElementById("exportPdf").onclick=exportPdf;
+  document.getElementById("backupBtn").onclick=()=>downloadBlob(new Blob([JSON.stringify(state,null,2)],{type:"application/json"}),"atlantica_programme.json");
   document.getElementById("importBtn").onclick=()=>document.getElementById("importFile").click();
   document.getElementById("importFile").addEventListener("change",e=>{const f=e.target.files[0];if(!f)return;
     const rd=new FileReader();rd.onload=()=>{try{const j=JSON.parse(rd.result);if(j.tasks){state=migrate(j);save();applyTheme();syncInputs();render();}}catch(err){alert("Invalid JSON");}};
