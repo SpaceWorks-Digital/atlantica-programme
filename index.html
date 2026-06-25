@@ -107,6 +107,8 @@ body.reordering{cursor:grabbing;user-select:none}
 .elrow .cstart,.elrow .cend{font-weight:600;color:var(--ink)}
 .cstart.tap,.cend.tap{cursor:pointer}
 .cstart.tap:hover,.cend.tap:hover{color:var(--accent)}
+body.hide-dates{--date:0px}
+body.hide-dates .cstart,body.hide-dates .cend,body.hide-dates .corner .dt{display:none}
 .addbtn{background:transparent;border:1px dashed var(--line);color:var(--ink3);border-radius:6px;padding:4px 8px;font:inherit;font-size:11px;cursor:pointer}
 .addbtn:hover{color:var(--accent);border-color:var(--accent)}
 .track{position:relative;flex:0 0 auto;cursor:default}
@@ -138,7 +140,7 @@ body.reordering{cursor:grabbing;user-select:none}
 .phrow .track:hover .empty-hint{opacity:.6}
 /* ---------- mobile ---------- */
 @media (max-width:760px){
-  :root{ --name:130px; --date:62px; --head-h:50px; --el-h:46px; --ph-h:42px; }
+  :root{ --name:152px; --date:58px; --head-h:50px; --el-h:46px; --ph-h:42px; }
   .brand .s{display:none}
   .dot{display:none}
   #title{max-width:60vw}
@@ -146,8 +148,7 @@ body.reordering{cursor:grabbing;user-select:none}
   .tools{gap:7px}
   .legend .hint{display:none}
   .btn,.seg button{padding:9px 12px}
-  body.hide-dates{ --date:0px; }
-  body.hide-dates .cstart,body.hide-dates .cend,body.hide-dates .corner .dt{display:none}
+  body.hide-dates{ --name:200px; }   /* reclaim width for the element name when dates are collapsed */
 }
 @media (pointer:coarse){
   .bar{height:24px}
@@ -281,7 +282,7 @@ function buildSeed(){
 }
 function defaults(){
   return {title:"Wavepool Cascais — Programme", start:"2025-10-01", end:"2032-06-30",
-          zoom:"month", collapsed:[], hideDates:false, order:ELEMENTS.map(e=>e.id), tasks:buildSeed()};
+          zoom:"month", collapsed:[], hideDates:null, order:ELEMENTS.map(e=>e.id), tasks:buildSeed()};
 }
 function migrate(s){ // add the Tender phase to programmes saved before it existed (between Technical & Construction)
   if(!s.tasks)return s;
@@ -293,6 +294,7 @@ function migrate(s){ // add the Tender phase to programmes saved before it exist
   if(!Array.isArray(s.order))s.order=ELEMENTS.map(e=>e.id);
   for(const e of ELEMENTS)if(!s.order.includes(e.id))s.order.push(e.id);
   s.order=s.order.filter(id=>ELEMENTS.some(e=>e.id===id));
+  if(s.hideDates===false)s.hideDates=null; // old default → auto (collapse on mobile, show on desktop)
   return s;
 }
 function load(){try{const j=JSON.parse(localStorage.getItem(LS_KEY));if(j&&j.tasks)return migrate(j);}catch(e){}return defaults();}
@@ -303,7 +305,7 @@ let projStart,projEnd,px,timelineW;
 function recalc(){
   projStart=parse(state.start);projEnd=parse(state.end);px=ZOOM[state.zoom].px;
   timelineW=Math.max(300,daysIn(projStart,projEnd)*px);
-  document.body.classList.toggle("hide-dates",!!state.hideDates);
+  document.body.classList.toggle("hide-dates", state.hideDates==null?isMobile():state.hideDates);
 }
 const xOf=d=>daysIn(projStart,(typeof d==="string"?parse(d):d))*px;
 
@@ -555,7 +557,7 @@ function init(){
   document.getElementById("title").addEventListener("change",e=>{state.title=e.target.value;save();});
   document.getElementById("projStart").addEventListener("change",e=>{state.start=e.target.value;save();render();});
   document.getElementById("projEnd").addEventListener("change",e=>{state.end=e.target.value;save();render();});
-  document.getElementById("datesToggle").onclick=()=>{state.hideDates=!state.hideDates;save();render();};
+  document.getElementById("datesToggle").onclick=()=>{const eff=state.hideDates==null?isMobile():state.hideDates;state.hideDates=!eff;save();render();};
   document.getElementById("expandAll").onclick=()=>{state.collapsed=[];save();render();};
   document.getElementById("collapseAll").onclick=()=>{state.collapsed=ELEMENTS.map(e=>e.id);save();render();};
   document.getElementById("todayBtn").onclick=scrollToToday;
