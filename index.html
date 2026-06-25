@@ -15,6 +15,7 @@
 <style>
 :root{
   --name: 230px; --date: 78px;
+  --ind1: 24px; --ind2: 42px;   /* row indent: elements under groups, phases under elements */
   --lw: calc(var(--name) + var(--date) * 2);
   --head-h: 56px; --el-h: 42px; --ph-h: 36px;
   --bg:#0f1217; --panel:#161b22; --panel2:#1b212b; --line:#283041; --line2:#1f2632;
@@ -55,6 +56,8 @@ body{
 .legend{display:flex;gap:5px;align-items:center;flex-wrap:nowrap;padding:7px 16px;flex:0 0 auto;
   background:#10141b;border-bottom:1px solid var(--line);overflow-x:auto;-webkit-overflow-scrolling:touch}
 .lg{display:flex;align-items:center;gap:7px;padding:4px 9px;border-radius:6px;background:#161c25;border:1px solid var(--line2);white-space:nowrap;flex:0 0 auto}
+.lg.head{background:transparent;border:none;font-weight:750;text-transform:uppercase;letter-spacing:.5px;padding-left:4px;padding-right:2px}
+.lg.head:not(:first-child){border-left:1px solid var(--line);border-radius:0;margin-left:6px;padding-left:12px}
 .lg .sw{width:11px;height:11px;border-radius:3px;flex:0 0 auto}
 .lg .r{font-weight:650;font-size:11px}
 .lg .o{color:var(--ink3);font-size:11px}
@@ -86,17 +89,24 @@ body.reordering{cursor:grabbing;user-select:none}
 .gridlayer .today{position:absolute;top:0;height:100%;width:2px;background:var(--today);box-shadow:0 0 8px rgba(244,63,94,.6);z-index:5}
 .gridlayer .today::after{content:"TODAY";position:absolute;top:2px;left:4px;font-size:9px;color:var(--today);font-weight:700;letter-spacing:.5px}
 .row{display:flex;position:relative;z-index:1;border-bottom:1px solid var(--line2)}
+.row.grprow{height:var(--el-h);background:#0c1117;border-top:2px solid var(--line)}
 .row.elrow{height:var(--el-h);background:#131820}
 .row.phrow{height:var(--ph-h)}
 .row.phrow:nth-child(even){background:rgba(255,255,255,.012)}
 .rowhead{position:sticky;left:0;width:var(--lw);flex:0 0 var(--lw);z-index:6;display:flex;background:inherit;border-right:1px solid var(--line)}
+.grprow .rowhead{background:#0c1117}
 .elrow .rowhead{background:#131820}
 .phrow .rowhead{background:#10141b}
 .phrow:nth-child(even) .rowhead{background:#121721}
 .label{flex:0 0 var(--name);display:flex;align-items:center;gap:8px;padding:0 10px;min-width:0}
+.grprow .label{padding-left:10px}
+.elrow .label{padding-left:var(--ind1)}
+.phrow .label{padding-left:var(--ind2)}
 .chev{cursor:pointer;color:var(--ink3);width:16px;height:24px;line-height:24px;text-align:center;transition:transform .12s;user-select:none;flex:0 0 auto;font-size:11px}
 .chev.open{transform:rotate(90deg)}
 .dot{width:10px;height:10px;border-radius:3px;flex:0 0 auto}
+.grpdot{width:11px;height:11px;border-radius:3px;flex:0 0 auto}
+.grpname{font-weight:750;font-size:12.5px;letter-spacing:.7px;text-transform:uppercase;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .elname{font-weight:650;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .phlabel{display:flex;flex-direction:column;line-height:1.16;min-width:0}
 .phlabel .r{font-size:11.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -105,6 +115,7 @@ body.reordering{cursor:grabbing;user-select:none}
 .cstart,.cend{flex:0 0 var(--date);display:flex;align-items:center;justify-content:center;font-size:11px;
   color:var(--ink2);border-left:1px solid var(--line2);font-variant-numeric:tabular-nums;text-align:center;padding:0 4px}
 .elrow .cstart,.elrow .cend{font-weight:600;color:var(--ink)}
+.grprow .cstart,.grprow .cend{font-weight:700;color:var(--ink)}
 .cstart.tap,.cend.tap{cursor:pointer}
 .cstart.tap:hover,.cend.tap:hover{color:var(--accent)}
 body.hide-dates{--date:0px}
@@ -125,6 +136,7 @@ body.hide-dates .cstart,body.hide-dates .cend,body.hide-dates .corner .dt{displa
 .elbar{position:absolute;top:50%;transform:translateY(-50%);height:15px;border-radius:7px;opacity:.95;
   display:flex;align-items:center;padding:0 9px;font-size:10px;font-weight:700;color:#fff;letter-spacing:.3px;
   box-shadow:0 1px 4px rgba(0,0,0,.4);overflow:hidden;white-space:nowrap}
+.elbar.grpbar{height:17px;border-radius:8px;opacity:.92;font-size:10.5px;letter-spacing:.5px}
 .elbar .cap{pointer-events:none}
 /* popover / editor */
 .pop{position:fixed;z-index:200;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:13px;width:256px}
@@ -140,7 +152,7 @@ body.hide-dates .cstart,body.hide-dates .cend,body.hide-dates .corner .dt{displa
 .phrow .track:hover .empty-hint{opacity:.6}
 /* ---------- mobile ---------- */
 @media (max-width:760px){
-  :root{ --name:216px; --date:58px; --head-h:50px; --el-h:46px; --ph-h:42px; }  /* fits longest name (Pool + Concourse) past the ~72px grip+chevron overhead, with buffer */
+  :root{ --name:230px; --date:58px; --ind1:14px; --ind2:24px; --head-h:50px; --el-h:46px; --ph-h:42px; }  /* --name fits longest element name (Pool + Concourse) past the grip+chevron+indent overhead */
   .brand .s{display:none}
   .dot{display:none}
   #title{max-width:60vw}
@@ -149,8 +161,9 @@ body.hide-dates .cstart,body.hide-dates .cend,body.hide-dates .corner .dt{displa
   .topbar{padding:8px 12px;padding-top:calc(8px + env(safe-area-inset-top))}
   .legend .hint{display:none}
   .btn,.seg button{padding:9px 12px}
-  .label{padding:0 6px;gap:5px}
+  .label{padding:0 6px}
   .elname{flex:1 1 auto;min-width:0}
+  .grpname{flex:1 1 auto;font-size:12px;letter-spacing:.2px}
 }
 @media (pointer:coarse){
   .bar{height:24px}
@@ -200,7 +213,7 @@ body.hide-dates .cstart,body.hide-dates .cend,body.hide-dates .corner .dt{displa
   <div class="inner" id="inner">
     <div class="head">
       <div class="corner">
-        <div class="cn name">Element / Phase</div>
+        <div class="cn name">Group · Element · Phase</div>
         <div class="cn dt">Start</div>
         <div class="cn dt">End</div>
       </div>
@@ -217,18 +230,40 @@ body.hide-dates .cstart,body.hide-dates .cend,body.hide-dates .corner .dt{displa
 "use strict";
 const DAY = 86400000;
 const LS_KEY = "atlantica_pm_v2";
+const STATE_V = 3;
 
-/* ---------------- model ---------------- */
-const PHASES = [
-  {id:"p0", riba:"RIBA 0 · Strategic Definition",   oa:"Programa Base",               col:"#94a3b8"},
-  {id:"p1", riba:"RIBA 1 · Preparation & Briefing", oa:"Programa Base",               col:"#64748b"},
-  {id:"p2", riba:"RIBA 2 · Concept Design",         oa:"Estudo Prévio",               col:"#38bdf8"},
-  {id:"p3", riba:"RIBA 3 · Spatial Coordination",   oa:"Anteprojeto / Licenciamento", col:"#818cf8"},
-  {id:"p4", riba:"RIBA 4 · Technical Design",        oa:"Projeto de Execução",         col:"#a78bfa"},
-  {id:"pt", riba:"Tender · Procurement",             oa:"Concurso / Contratação",      col:"#eab308"},
-  {id:"p5", riba:"RIBA 5 · Manufacturing & Construction", oa:"Assistência Técnica / Obra", col:"#fb923c"},
-  {id:"p6", riba:"RIBA 6 · Handover",                oa:"Conclusão / Receção",         col:"#34d399"},
-  {id:"p7", riba:"RIBA 7 · Use",                     oa:"Uso / Pós-Ocupação",          col:"#2dd4bf"},
+/* ---------------- model ----------------
+   Three-level tree:  GROUP  ->  ELEMENT  ->  PHASE
+   DESIGN & TENDERING uses the RIBA/OA design phases.
+   CONSTRUCTION uses a construction-sequence phase set.
+   The same six elements live under both groups.
+   tasks are keyed  "<groupId>|<elId>|<phaseId>". */
+const GROUPS = [
+  {id:"design",       name:"DESIGN & TENDERING", col:"#38bdf8"},
+  {id:"construction", name:"CONSTRUCTION",       col:"#fb923c"},
+];
+const DESIGN_PHASES = [
+  {id:"p0", t1:"RIBA 0 · Strategic Definition",         t2:"Programa Base",                col:"#94a3b8"},
+  {id:"p1", t1:"RIBA 1 · Preparation & Briefing",       t2:"Programa Base",                col:"#64748b"},
+  {id:"p2", t1:"RIBA 2 · Concept Design",               t2:"Estudo Prévio",                col:"#38bdf8"},
+  {id:"p3", t1:"RIBA 3 · Spatial Coordination",         t2:"Anteprojeto / Licenciamento",  col:"#818cf8"},
+  {id:"p4", t1:"RIBA 4 · Technical Design",             t2:"Projeto de Execução",          col:"#a78bfa"},
+  {id:"pt", t1:"Tender · Procurement",                  t2:"Concurso / Contratação",       col:"#eab308"},
+  {id:"p5", t1:"RIBA 5 · Manufacturing & Construction", t2:"Assistência Técnica / Obra",   col:"#fb923c"},
+  {id:"p6", t1:"RIBA 6 · Handover",                     t2:"Conclusão / Receção",          col:"#34d399"},
+  {id:"p7", t1:"RIBA 7 · Use",                          t2:"Uso / Pós-Ocupação",           col:"#2dd4bf"},
+];
+const CONSTRUCTION_PHASES = [
+  {id:"c0", t1:"Mobilisation",          t2:"Site set-up",             col:"#94a3b8"},
+  {id:"c1", t1:"Enabling Works",        t2:"Demolition / Clearance",  col:"#a3a3a3"},
+  {id:"c2", t1:"Substructure",          t2:"Set-out / Foundations",   col:"#f59e0b"},
+  {id:"c3", t1:"Superstructure",        t2:"Cores / Structure",       col:"#fb923c"},
+  {id:"c4", t1:"Building Envelope",     t2:"Facade / Roof",           col:"#f472b6"},
+  {id:"c5", t1:"MEP · First Fix",       t2:"Services rough-in",       col:"#818cf8"},
+  {id:"c6", t1:"Internal Fit-out",      t2:"Partitions / Finishes",   col:"#a78bfa"},
+  {id:"c7", t1:"MEP & Commissioning",   t2:"Second fix / Testing",    col:"#22d3ee"},
+  {id:"c8", t1:"External Works",        t2:"Landscape / Hardstanding",col:"#34d399"},
+  {id:"c9", t1:"Handover / Completion", t2:"Snagging / Defects",      col:"#2dd4bf"},
 ];
 const ELEMENTS = [
   {id:"masterplan", name:"Masterplan",        col:"#0f766e"},
@@ -238,6 +273,9 @@ const ELEMENTS = [
   {id:"apartments", name:"Apartments",        col:"#c026d3"},
   {id:"landscape",  name:"Landscape",         col:"#16a34a"},
 ];
+const phasesOf = gid => gid==="construction" ? CONSTRUCTION_PHASES : DESIGN_PHASES;
+const tkey = (g,el,ph) => g+"|"+el+"|"+ph;
+const shortPhase = ph => ph.t1.split("·")[0].trim();
 
 /* ---------------- date helpers ---------------- */
 const pad=n=>String(n).padStart(2,"0");
@@ -261,6 +299,22 @@ const isMobile=()=>window.matchMedia("(max-width:760px)").matches;
 const ZOOM={day:{px:26},week:{px:7.6},month:{px:2.45},quarter:{px:0.95}};
 let state=null;
 
+function allElementKeys(){const a=[];for(const g of GROUPS)for(const e of ELEMENTS)a.push(g.id+"|"+e.id);return a;}
+
+/* subdivide a construction window (Date s -> Date e) into the construction phase sequence */
+function seedConstruction(sDate,eDate){
+  const out={}; const total=Math.max(30,daysIn(sDate,eDate));
+  const w=[3,4,12,22,16,10,16,9,9,6]; const sum=w.reduce((a,b)=>a+b,0);
+  let cur=new Date(sDate);
+  CONSTRUCTION_PHASES.forEach((ph,i)=>{
+    const dur=Math.max(10,Math.round(total*w[i]/sum));
+    const ps=new Date(cur); let pe=addDays(ps,dur); if(pe>eDate)pe=new Date(eDate);
+    out[ph.id]={s:iso(ps),e:iso(pe)};
+    cur=addDays(ps,Math.max(7,Math.round(dur*0.62))); if(cur>eDate)cur=new Date(eDate);
+  });
+  return out;
+}
+
 function buildSeed(){
   const tasks={};
   const plan={
@@ -272,30 +326,53 @@ function buildSeed(){
     landscape: {s:"2026-06",d:[2,3,4,4,5,2,30,4,10]},
   };
   for(const el of ELEMENTS){
-    const p=plan[el.id]; let cur=parse(p.s+"-01");
+    const p=plan[el.id]; let cur=parse(p.s+"-01"); let p5s=null,p5e=null;
     p.d.forEach((dur,i)=>{
-      const s=new Date(cur), e=addMonths(s,dur);
-      tasks[el.id+"|"+PHASES[i].id]={s:iso(s),e:iso(e)};
+      const s=new Date(cur), e=addMonths(s,dur), ph=DESIGN_PHASES[i];
+      tasks[tkey("design",el.id,ph.id)]={s:iso(s),e:iso(e)};
+      if(ph.id==="p5"){p5s=new Date(s);p5e=new Date(e);}
       const adv = i<4 ? Math.max(1,Math.round(dur*0.55)) : dur;
       cur=addMonths(s,adv);
     });
+    if(p5s){const cs=seedConstruction(p5s,p5e);for(const cid in cs)tasks[tkey("construction",el.id,cid)]=cs[cid];}
   }
   return tasks;
 }
 function defaults(){
   return {title:"Wavepool Cascais — Programme", start:"2025-10-01", end:"2032-06-30",
-          zoom:"month", collapsed:[], hideDates:null, order:ELEMENTS.map(e=>e.id), tasks:buildSeed()};
+          zoom:"month", collapsed:allElementKeys(), hideDates:null, order:ELEMENTS.map(e=>e.id), tasks:buildSeed(), v:STATE_V};
 }
-function migrate(s){ // add the Tender phase to programmes saved before it existed (between Technical & Construction)
-  if(!s.tasks)return s;
-  for(const el of ELEMENTS){const tk=el.id+"|pt";if(s.tasks[tk])continue;
-    const tech=s.tasks[el.id+"|p4"],con=s.tasks[el.id+"|p5"];
-    if(tech&&con){let a=parse(tech.e),b=parse(con.s);if(b<=a)b=addMonths(a,3);s.tasks[tk]={s:iso(a),e:iso(b)};}
-    else if(tech){s.tasks[tk]={s:tech.e,e:iso(addMonths(parse(tech.e),3))};}}
-  // element order: default, then ensure every element present exactly once
+function migrate(s){
+  if(!s.tasks)s.tasks={};
+  if(s.v!==STATE_V){
+    // 1) prefix legacy 2-part design keys ("<el>|<ph>") with the design group
+    const nt={};
+    for(const k of Object.keys(s.tasks)){
+      if(k.split("|").length===2)nt["design|"+k]=s.tasks[k];
+      else nt[k]=s.tasks[k];
+    }
+    s.tasks=nt;
+    // 2) ensure the Tender phase exists in design (programmes saved before it)
+    for(const el of ELEMENTS){
+      const tk=tkey("design",el.id,"pt");if(s.tasks[tk])continue;
+      const tech=s.tasks[tkey("design",el.id,"p4")],con=s.tasks[tkey("design",el.id,"p5")];
+      if(tech&&con){let a=parse(tech.e),b=parse(con.s);if(b<=a)b=addMonths(a,3);s.tasks[tk]={s:iso(a),e:iso(b)};}
+      else if(tech){s.tasks[tk]={s:tech.e,e:iso(addMonths(parse(tech.e),3))};}
+    }
+    // 3) seed the construction group from each element's RIBA 5 window, if not already present
+    for(const el of ELEMENTS){
+      if(CONSTRUCTION_PHASES.some(ph=>s.tasks[tkey("construction",el.id,ph.id)]))continue;
+      const p5=s.tasks[tkey("design",el.id,"p5")];
+      if(p5){const cs=seedConstruction(parse(p5.s),parse(p5.e));for(const cid in cs)s.tasks[tkey("construction",el.id,cid)]=cs[cid];}
+    }
+    // 4) reset collapse to the new default (groups open, elements collapsed)
+    s.collapsed=allElementKeys();
+    s.v=STATE_V;
+  }
   if(!Array.isArray(s.order))s.order=ELEMENTS.map(e=>e.id);
   for(const e of ELEMENTS)if(!s.order.includes(e.id))s.order.push(e.id);
   s.order=s.order.filter(id=>ELEMENTS.some(e=>e.id===id));
+  if(!Array.isArray(s.collapsed))s.collapsed=allElementKeys();
   if(s.hideDates===false)s.hideDates=null; // old default → auto (collapse on mobile, show on desktop)
   return s;
 }
@@ -349,67 +426,86 @@ function buildAxis(){
   else if(today)today.style.display="none";
 }
 
-/* ---------------- rows ---------------- */
+/* ---------------- spans ---------------- */
 function orderedElements(){return state.order.map(id=>ELEMENTS.find(e=>e.id===id)).filter(Boolean);}
-function elTasks(elId){const l=[];for(const ph of PHASES){const t=state.tasks[elId+"|"+ph.id];if(t)l.push(t);}return l;}
-function elSpan(elId){const ts=elTasks(elId);if(!ts.length)return null;let a=parse(ts[0].s),b=parse(ts[0].e);
-  for(const t of ts){const s=parse(t.s),e=parse(t.e);if(s<a)a=s;if(e>b)b=e;}return{a,b};}
+function phaseTasks(gid,elId){const l=[];for(const ph of phasesOf(gid)){const t=state.tasks[tkey(gid,elId,ph.id)];if(t)l.push(t);}return l;}
+function spanOf(list){if(!list.length)return null;let a=parse(list[0].s),b=parse(list[0].e);
+  for(const t of list){const s=parse(t.s),e=parse(t.e);if(s<a)a=s;if(e>b)b=e;}return{a,b};}
+function elSpan(gid,elId){return spanOf(phaseTasks(gid,elId));}
+function groupSpan(gid){let all=[];for(const el of ELEMENTS)all=all.concat(phaseTasks(gid,el.id));return spanOf(all);}
+
+/* ---------------- rows ---------------- */
+function toggleCollapse(key){const c=new Set(state.collapsed);if(c.has(key))c.delete(key);else c.add(key);state.collapsed=[...c];save();render();}
 
 function render(){
   recalc();buildAxis();
   const rows=document.getElementById("rows");rows.innerHTML="";
   const collapsed=new Set(state.collapsed);
-  for(const el of orderedElements()){
-    const open=!collapsed.has(el.id),sp=elSpan(el.id);
-    const er=document.createElement("div");er.className="row elrow";
-    er.innerHTML=`<div class="rowhead">
-        <div class="label"><span class="drag" data-eldrag="${el.id}" title="Drag to reorder">⠿</span><span class="chev ${open?"open":""}" data-el="${el.id}">▶</span>
-          <span class="dot" style="background:${el.col}"></span>
-          <span class="elname">${el.name}</span></div>
-        <div class="cstart">${sp?fmtDate(sp.a):"—"}</div>
-        <div class="cend">${sp?fmtDate(sp.b):"—"}</div>
+  for(const g of GROUPS){
+    const gOpen=!collapsed.has(g.id),gsp=groupSpan(g.id);
+    const gr=document.createElement("div");gr.className="row grprow";gr.dataset.grp=g.id;
+    gr.innerHTML=`<div class="rowhead">
+        <div class="label"><span class="chev ${gOpen?"open":""}">▶</span>
+          <span class="grpdot" style="background:${g.col}"></span>
+          <span class="grpname">${g.name}</span></div>
+        <div class="cstart">${gsp?fmtDate(gsp.a):"—"}</div>
+        <div class="cend">${gsp?fmtDate(gsp.b):"—"}</div>
       </div><div class="track" style="width:${timelineW}px"></div>`;
-    rows.appendChild(er);
-    const etrack=er.querySelector(".track");
-    if(sp){
-      const b=document.createElement("div");b.className="elbar";
-      b.style.left=xOf(sp.a)+"px";b.style.width=Math.max(2,xOf(sp.b)-xOf(sp.a))+"px";
-      b.style.background=`linear-gradient(90deg,${el.col},${shade(el.col,28)})`;
-      b.innerHTML=`<span class="cap">${el.name}</span>`;
-      b.title=`${el.name}: ${iso(sp.a)} → ${iso(sp.b)} (${daysIn(sp.a,sp.b)} days)`;
-      etrack.appendChild(b);
-    }
-    er.querySelector(".chev").addEventListener("click",()=>{
-      state.collapsed = collapsed.has(el.id) ? state.collapsed.filter(x=>x!==el.id) : [...state.collapsed,el.id];
-      save();render();
-    });
-    attachReorder(er.querySelector(".drag"),el.id);
-    if(!open)continue;
-    for(const ph of PHASES){
-      const key=el.id+"|"+ph.id,t=state.tasks[key];
-      const pr=document.createElement("div");pr.className="row phrow";
-      const sCell = t?`<div class="cstart tap" data-edit="${key}">${fmtDate(parse(t.s))}</div>`
-                     :`<div class="cstart"><button class="addbtn" data-add="${key}">+ add</button></div>`;
-      const eCell = t?`<div class="cend tap" data-edit="${key}">${fmtDate(parse(t.e))}</div>`:`<div class="cend">—</div>`;
-      pr.innerHTML=`<div class="rowhead">
-          <div class="label"><span class="phchip" style="background:${ph.col}"></span>
-            <span class="phlabel"><span class="r">${ph.riba}</span><span class="o">${ph.oa}</span></span></div>
-          ${sCell}${eCell}
-        </div><div class="track" data-key="${key}" style="width:${timelineW}px"><span class="empty-hint">double-tap to add</span></div>`;
-      rows.appendChild(pr);
-      const track=pr.querySelector(".track");
-      if(t)track.appendChild(makeBar(key,t,ph,el));
-      track.addEventListener("dblclick",ev=>{if(ev.target===track||ev.target.classList.contains("empty-hint"))createTaskAt(key,ev);});
-      const add=pr.querySelector("[data-add]");if(add)add.addEventListener("click",()=>createTaskDefault(key));
-      pr.querySelectorAll("[data-edit]").forEach(c=>c.addEventListener("click",()=>{
-        const bar=track.querySelector(".bar");if(bar)openPopover(bar,key,ph,el);
-      }));
+    rows.appendChild(gr);
+    const gtrack=gr.querySelector(".track");
+    if(gsp){const b=document.createElement("div");b.className="elbar grpbar";
+      b.style.left=xOf(gsp.a)+"px";b.style.width=Math.max(2,xOf(gsp.b)-xOf(gsp.a))+"px";
+      b.style.background=`linear-gradient(90deg,${g.col},${shade(g.col,28)})`;
+      b.innerHTML=`<span class="cap">${g.name}</span>`;gtrack.appendChild(b);}
+    gr.querySelector(".chev").addEventListener("click",()=>toggleCollapse(g.id));
+    if(!gOpen)continue;
+
+    for(const el of orderedElements()){
+      const elKey=g.id+"|"+el.id,elOpen=!collapsed.has(elKey),sp=elSpan(g.id,el.id);
+      const er=document.createElement("div");er.className="row elrow";er.dataset.group=g.id;er.dataset.elkey=elKey;
+      er.innerHTML=`<div class="rowhead">
+          <div class="label"><span class="drag" data-eldrag="${el.id}" data-group="${g.id}" title="Drag to reorder">⠿</span><span class="chev ${elOpen?"open":""}">▶</span>
+            <span class="dot" style="background:${el.col}"></span>
+            <span class="elname">${el.name}</span></div>
+          <div class="cstart">${sp?fmtDate(sp.a):"—"}</div>
+          <div class="cend">${sp?fmtDate(sp.b):"—"}</div>
+        </div><div class="track" style="width:${timelineW}px"></div>`;
+      rows.appendChild(er);
+      const etrack=er.querySelector(".track");
+      if(sp){const b=document.createElement("div");b.className="elbar";
+        b.style.left=xOf(sp.a)+"px";b.style.width=Math.max(2,xOf(sp.b)-xOf(sp.a))+"px";
+        b.style.background=`linear-gradient(90deg,${el.col},${shade(el.col,28)})`;
+        b.innerHTML=`<span class="cap">${el.name}</span>`;etrack.appendChild(b);}
+      er.querySelector(".chev").addEventListener("click",()=>toggleCollapse(elKey));
+      attachReorder(er.querySelector(".drag"),el.id,g.id);
+      if(!elOpen)continue;
+
+      for(const ph of phasesOf(g.id)){
+        const key=tkey(g.id,el.id,ph.id),t=state.tasks[key];
+        const pr=document.createElement("div");pr.className="row phrow";
+        const sCell = t?`<div class="cstart tap" data-edit="${key}">${fmtDate(parse(t.s))}</div>`
+                       :`<div class="cstart"><button class="addbtn" data-add="${key}">+ add</button></div>`;
+        const eCell = t?`<div class="cend tap" data-edit="${key}">${fmtDate(parse(t.e))}</div>`:`<div class="cend">—</div>`;
+        pr.innerHTML=`<div class="rowhead">
+            <div class="label"><span class="phchip" style="background:${ph.col}"></span>
+              <span class="phlabel"><span class="r">${ph.t1}</span><span class="o">${ph.t2}</span></span></div>
+            ${sCell}${eCell}
+          </div><div class="track" data-key="${key}" style="width:${timelineW}px"><span class="empty-hint">double-tap to add</span></div>`;
+        rows.appendChild(pr);
+        const track=pr.querySelector(".track");
+        if(t)track.appendChild(makeBar(key,t,ph,el));
+        track.addEventListener("dblclick",ev=>{if(ev.target===track||ev.target.classList.contains("empty-hint"))createTaskAt(key,ev);});
+        const add=pr.querySelector("[data-add]");if(add)add.addEventListener("click",()=>createTaskDefault(key));
+        pr.querySelectorAll("[data-edit]").forEach(c=>c.addEventListener("click",()=>{
+          const bar=track.querySelector(".bar");if(bar)openPopover(bar,key,ph,el);
+        }));
+      }
     }
   }
 }
 
-/* ---------------- reorder elements (vertical drag) ---------------- */
-function attachReorder(handle,elId){
+/* ---------------- reorder elements (vertical drag, scoped to its group) ---------------- */
+function attachReorder(handle,elId,gid){
   if(!handle)return;
   handle.addEventListener("pointerdown",e=>{
     e.preventDefault();e.stopPropagation();
@@ -419,12 +515,15 @@ function attachReorder(handle,elId){
     const srcRow=handle.closest(".elrow");if(srcRow)srcRow.classList.add("drag-src");
     const ind=document.createElement("div");ind.className="drop-ind";rowsEl.appendChild(ind);
     let target=null;
+    const groupRows=()=>[...document.querySelectorAll(".elrow")].filter(r=>r.dataset.group===gid);
     const place=y=>{
-      const els=[...document.querySelectorAll(".elrow")];
+      const els=groupRows();
       let idx=els.length;
       for(let i=0;i<els.length;i++){const r=els[i].getBoundingClientRect();if(y<r.top+r.height/2){idx=i;break;}}
       target=idx;
-      ind.style.top=((idx>=els.length?rowsEl.offsetHeight:els[idx].offsetTop)-1)+"px";
+      if(!els.length){ind.style.top="0px";return;}
+      if(idx>=els.length){const last=els[els.length-1];ind.style.top=(last.offsetTop+last.offsetHeight-1)+"px";}
+      else ind.style.top=(els[idx].offsetTop-1)+"px";
     };
     place(e.clientY);
     const move=ev=>place(ev.clientY);
@@ -439,9 +538,9 @@ function attachReorder(handle,elId){
     handle.addEventListener("pointermove",move);handle.addEventListener("pointerup",up);
   });
 }
-function phOf(key){return PHASES.find(p=>p.id===key.split("|")[1]);}
-function elOf(key){return ELEMENTS.find(e=>e.id===key.split("|")[0]);}
-const shortPhase=ph=>ph.riba.split("·")[0].trim();
+function phOf(key){const p=key.split("|");return phasesOf(p[0]).find(ph=>ph.id===p[2]);}
+function elOf(key){const p=key.split("|");return ELEMENTS.find(e=>e.id===p[1]);}
+function grpOf(key){const p=key.split("|");return GROUPS.find(g=>g.id===p[0]);}
 
 function makeBar(key,t,ph,el){
   const a=parse(t.s),b=parse(t.e);
@@ -449,13 +548,14 @@ function makeBar(key,t,ph,el){
   bar.style.left=xOf(a)+"px";bar.style.width=Math.max(6,xOf(b)-xOf(a))+"px";
   bar.style.background=`linear-gradient(180deg,${shade(ph.col,18)},${ph.col})`;
   bar.innerHTML=`<span class="gripL"></span><span class="lab">${t.label||shortPhase(ph)}</span><span class="gripR"></span>`;
-  bar.title=`${el.name} — ${ph.riba}\n${ph.oa}\n${iso(a)} → ${iso(b)} (${daysIn(a,b)} days)`;
+  bar.title=`${el.name} — ${ph.t1}\n${ph.t2}\n${iso(a)} → ${iso(b)} (${daysIn(a,b)} days)`;
   attachDrag(bar,key,ph,el);
   return bar;
 }
 
 /* ---------------- drag + tap-to-edit ---------------- */
 function attachDrag(bar,key,ph,el){
+  const gid=key.split("|")[0];
   bar.addEventListener("pointermove",e=>{ if(bar.classList.contains("dragging"))return;
     const r=bar.getBoundingClientRect(),off=e.clientX-r.left,g=window.matchMedia("(pointer:coarse)").matches?15:9;
     bar.style.cursor=(off<g||off>r.width-g)?"ew-resize":"grab";});
@@ -477,23 +577,29 @@ function attachDrag(bar,key,ph,el){
       if(en>projEnd.getTime()){const sh=en-projEnd.getTime();if(mode==="move"){s-=sh;en-=sh;}else en=projEnd.getTime();}
       t.s=iso(new Date(s));t.e=iso(new Date(en));
       bar.style.left=xOf(t.s)+"px";bar.style.width=Math.max(6,xOf(t.e)-xOf(t.s))+"px";
-      bar.title=`${el.name} — ${ph.riba}\n${ph.oa}\n${t.s} → ${t.e} (${daysIn(parse(t.s),parse(t.e))} days)`;
-      updateElbar(el.id);updateRowDates(key,t);
+      bar.title=`${el.name} — ${ph.t1}\n${ph.t2}\n${t.s} → ${t.e} (${daysIn(parse(t.s),parse(t.e))} days)`;
+      updateElbar(gid,el.id);updateGrpbar(gid);updateRowDates(key,t);
     };
     const up=ev=>{
       bar.classList.remove("dragging");try{bar.releasePointerCapture(e.pointerId);}catch(_){}
       bar.removeEventListener("pointermove",move);bar.removeEventListener("pointerup",up);
       if(!moved&&Date.now()-t0<450){openPopover(bar,key,ph,el);return;}
-      save();renderElDate(el.id);
+      save();renderSpans(gid,el.id);
     };
     bar.addEventListener("pointermove",move);bar.addEventListener("pointerup",up);
   });
 }
-function findEl(elId){return [...document.querySelectorAll(".elrow")].find(r=>r.querySelector(`.chev[data-el="${elId}"]`));}
-function updateElbar(elId){const er=findEl(elId);if(!er)return;const sp=elSpan(elId),bar=er.querySelector(".elbar");
+function findElRow(gid,elId){return document.querySelector(`.elrow[data-elkey="${gid}|${elId}"]`);}
+function findGrpRow(gid){return document.querySelector(`.grprow[data-grp="${gid}"]`);}
+function updateElbar(gid,elId){const er=findElRow(gid,elId);if(!er)return;const sp=elSpan(gid,elId),bar=er.querySelector(".elbar");
   if(sp&&bar){bar.style.left=xOf(sp.a)+"px";bar.style.width=Math.max(2,xOf(sp.b)-xOf(sp.a))+"px";}}
-function renderElDate(elId){const er=findEl(elId);if(!er)return;const sp=elSpan(elId);
-  er.querySelector(".cstart").textContent=sp?fmtDate(sp.a):"—";er.querySelector(".cend").textContent=sp?fmtDate(sp.b):"—";}
+function updateGrpbar(gid){const gr=findGrpRow(gid);if(!gr)return;const sp=groupSpan(gid),bar=gr.querySelector(".elbar");
+  if(sp&&bar){bar.style.left=xOf(sp.a)+"px";bar.style.width=Math.max(2,xOf(sp.b)-xOf(sp.a))+"px";}}
+function renderSpans(gid,elId){
+  const er=findElRow(gid,elId);if(er){const sp=elSpan(gid,elId);
+    er.querySelector(".cstart").textContent=sp?fmtDate(sp.a):"—";er.querySelector(".cend").textContent=sp?fmtDate(sp.b):"—";}
+  const gr=findGrpRow(gid);if(gr){const gs=groupSpan(gid);
+    gr.querySelector(".cstart").textContent=gs?fmtDate(gs.a):"—";gr.querySelector(".cend").textContent=gs?fmtDate(gs.b):"—";}}
 function updateRowDates(key,t){const cells=document.querySelectorAll(`[data-edit="${key}"]`);
   if(cells[0])cells[0].textContent=fmtDate(parse(t.s));if(cells[1])cells[1].textContent=fmtDate(parse(t.e));}
 
@@ -510,10 +616,10 @@ function createTaskDefault(key){
 }
 let popEl=null;
 function openPopover(bar,key,ph,el){
-  closePopover();const t=state.tasks[key];if(!t)return;
+  closePopover();const t=state.tasks[key];if(!t)return;const g=grpOf(key);
   const p=document.createElement("div");p.className="pop";popEl=p;
   p.innerHTML=`<div class="grab"></div><h4>${el.name}</h4>
-    <div class="meta">${ph.riba} · ${ph.oa}</div>
+    <div class="meta">${g?g.name+" · ":""}${ph.t1}${ph.t2?" — "+ph.t2:""}</div>
     <div class="row2"><label>Label</label><input type="text" id="pLabel" value="${(t.label||"").replace(/"/g,"&quot;")}" placeholder="${shortPhase(ph)}"></div>
     <div class="row2"><label>Start</label><input type="date" id="pStart" value="${t.s}"></div>
     <div class="row2"><label>End</label><input type="date" id="pEnd" value="${t.e}"></div>
@@ -542,9 +648,13 @@ function shade(hex,amt){const n=parseInt(hex.slice(1),16);let r=n>>16,g=(n>>8)&2
   r=Math.round(r+(255-r)*amt/100);g=Math.round(g+(255-g)*amt/100);b=Math.round(b+(255-b)*amt/100);
   return`#${(1<<24|r<<16|g<<8|b).toString(16).slice(1)}`;}
 function buildLegend(){const L=document.getElementById("legend");L.innerHTML="";
-  for(const ph of PHASES){const e=document.createElement("div");e.className="lg";
-    e.innerHTML=`<span class="sw" style="background:${ph.col}"></span><span class="r">${shortPhase(ph)}</span><span class="o">${ph.riba.split("·")[1].trim()} · ${ph.oa}</span>`;L.appendChild(e);}
-  const h=document.createElement("div");h.className="hint";h.textContent="drag = move · edge = resize · tap = edit · double-tap empty = add";L.appendChild(h);}
+  for(const g of GROUPS){
+    const h=document.createElement("div");h.className="lg head";
+    h.innerHTML=`<span class="sw" style="background:${g.col}"></span><span class="r">${g.name}</span>`;L.appendChild(h);
+    for(const ph of phasesOf(g.id)){const e=document.createElement("div");e.className="lg";
+      e.innerHTML=`<span class="sw" style="background:${ph.col}"></span><span class="r">${shortPhase(ph)}</span><span class="o">${ph.t2}</span>`;L.appendChild(e);}
+  }
+  const hint=document.createElement("div");hint.className="hint";hint.textContent="drag = move · edge = resize · tap = edit · double-tap empty = add";L.appendChild(hint);}
 function setZoom(z){state.zoom=z;[...document.querySelectorAll("#zoomSeg button")].forEach(b=>b.classList.toggle("on",b.dataset.z===z));save();render();}
 function scrollToToday(){const n=new Date(),tt=new Date(n.getFullYear(),n.getMonth(),n.getDate());
   if(tt>=projStart&&tt<=projEnd)document.getElementById("scroll").scrollLeft=xOf(tt)-200;}
@@ -554,14 +664,16 @@ function syncInputs(){document.getElementById("title").value=state.title;
   [...document.querySelectorAll("#zoomSeg button")].forEach(b=>b.classList.toggle("on",b.dataset.z===state.zoom));}
 
 function init(){
-  state=load();buildLegend();syncInputs();render();scrollToToday();
+  state=load();buildLegend();syncInputs();render();
+  // On mobile, open at the far left (element names + timeline start) rather than scrolled to today.
+  if(isMobile())document.getElementById("scroll").scrollLeft=0; else scrollToToday();
   document.getElementById("zoomSeg").addEventListener("click",e=>{if(e.target.dataset.z)setZoom(e.target.dataset.z);});
   document.getElementById("title").addEventListener("change",e=>{state.title=e.target.value;save();});
   document.getElementById("projStart").addEventListener("change",e=>{state.start=e.target.value;save();render();});
   document.getElementById("projEnd").addEventListener("change",e=>{state.end=e.target.value;save();render();});
   document.getElementById("datesToggle").onclick=()=>{const eff=state.hideDates==null?isMobile():state.hideDates;state.hideDates=!eff;save();render();};
   document.getElementById("expandAll").onclick=()=>{state.collapsed=[];save();render();};
-  document.getElementById("collapseAll").onclick=()=>{state.collapsed=ELEMENTS.map(e=>e.id);save();render();};
+  document.getElementById("collapseAll").onclick=()=>{state.collapsed=allElementKeys();save();render();};
   document.getElementById("todayBtn").onclick=scrollToToday;
   document.getElementById("printBtn").onclick=()=>window.print();
   document.getElementById("resetBtn").onclick=()=>{if(confirm("Reset the programme to the seeded ATLANTICA defaults? This clears your edits."))
@@ -570,7 +682,7 @@ function init(){
     const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="atlantica_programme.json";a.click();URL.revokeObjectURL(a.href);};
   document.getElementById("importBtn").onclick=()=>document.getElementById("importFile").click();
   document.getElementById("importFile").addEventListener("change",e=>{const f=e.target.files[0];if(!f)return;
-    const rd=new FileReader();rd.onload=()=>{try{const j=JSON.parse(rd.result);if(j.tasks){state=j;save();syncInputs();render();}}catch(err){alert("Invalid JSON");}};
+    const rd=new FileReader();rd.onload=()=>{try{const j=JSON.parse(rd.result);if(j.tasks){state=migrate(j);save();syncInputs();render();}}catch(err){alert("Invalid JSON");}};
     rd.readAsText(f);e.target.value="";});
   window.addEventListener("resize",()=>{recalc();});
   if("serviceWorker" in navigator && location.protocol.indexOf("http")===0){
