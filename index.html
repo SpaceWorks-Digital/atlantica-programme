@@ -799,9 +799,7 @@ function exportExcel(){
 
 /* ---------------- export: PDF (full schedule fitted to one A0 sheet) ---------------- */
 function exportPdf(){
-  const prevCollapsed=state.collapsed.slice(),prevHide=state.hideDates;
-  state.collapsed=[];state.hideDates=false; // show the entire schedule incl. date columns
-  render();
+  // Capture the CURRENT view as-is (whatever is expanded/collapsed and the dates toggle).
   const head=document.getElementById("pdfHeader");
   head.innerHTML=`<div class="t">${state.title}</div><div class="sub">26.015 · Programme &amp; Phasing — ${fmtDate(projStart)} to ${fmtDate(projEnd)}</div>`;
   const inner=document.getElementById("inner");
@@ -818,7 +816,6 @@ function exportPdf(){
     const e=document.getElementById("pdfPageStyle");if(e)e.remove();
     document.documentElement.style.removeProperty("--pdf-scale");
     head.innerHTML="";
-    state.collapsed=prevCollapsed;state.hideDates=prevHide;render();
     window.removeEventListener("afterprint",cleanup);
   };
   window.addEventListener("afterprint",cleanup);
