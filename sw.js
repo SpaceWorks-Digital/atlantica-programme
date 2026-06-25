@@ -1,5 +1,7 @@
-/* ATLANTICA PM dashboard — offline service worker (cache-first with network update) */
-const CACHE = "atlantica-pm-v2";
+/* ATLANTICA PM dashboard — service worker.
+   NETWORK-FIRST: always fetch the latest when online (so new deploys show up immediately),
+   fall back to cache only when offline. */
+const CACHE = "atlantica-pm-v3";
 const ASSETS = [
   "./", "./index.html", "./manifest.webmanifest",
   "./icon-180.png", "./icon-192.png", "./icon-512.png"
@@ -16,10 +18,10 @@ self.addEventListener("activate", e => {
 self.addEventListener("fetch", e => {
   if (e.request.method !== "GET") return;
   e.respondWith(
-    caches.match(e.request).then(r => r || fetch(e.request).then(resp => {
+    fetch(e.request).then(resp => {
       const cp = resp.clone();
       caches.open(CACHE).then(c => c.put(e.request, cp));
       return resp;
-    }).catch(() => caches.match("./index.html")))
+    }).catch(() => caches.match(e.request).then(r => r || caches.match("./index.html")))
   );
 });

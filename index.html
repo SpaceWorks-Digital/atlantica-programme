@@ -145,7 +145,8 @@ body.hide-dates .cstart,body.hide-dates .cend,body.hide-dates .corner .dt{displa
   .dot{display:none}
   #title{max-width:60vw}
   .daterange{order:5}
-  .tools{gap:7px}
+  .tools{gap:7px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px}
+  .topbar{padding:8px 12px;padding-top:calc(8px + env(safe-area-inset-top))}
   .legend .hint{display:none}
   .btn,.seg button{padding:9px 12px}
   body.hide-dates{ --name:200px; }   /* reclaim width for the element name when dates are collapsed */
@@ -572,7 +573,9 @@ function init(){
     rd.readAsText(f);e.target.value="";});
   window.addEventListener("resize",()=>{recalc();});
   if("serviceWorker" in navigator && location.protocol.indexOf("http")===0){
-    navigator.serviceWorker.register("sw.js").catch(()=>{});
+    navigator.serviceWorker.register("sw.js").then(r=>{try{r.update();}catch(_){}}).catch(()=>{});
+    let _swReloaded=false;
+    navigator.serviceWorker.addEventListener("controllerchange",()=>{if(_swReloaded)return;_swReloaded=true;location.reload();});
   }
 }
 document.addEventListener("DOMContentLoaded",init);
