@@ -149,7 +149,9 @@ body.hide-dates .cstart,body.hide-dates .cend,body.hide-dates .corner .dt{displa
   .topbar{padding:8px 12px;padding-top:calc(8px + env(safe-area-inset-top))}
   .legend .hint{display:none}
   .btn,.seg button{padding:9px 12px}
-  body.hide-dates{ --name:200px; }   /* reclaim width for the element name when dates are collapsed */
+  .label{padding:0 6px;gap:5px}
+  .elname{flex:1 1 auto;min-width:0}
+  body.hide-dates{ --name:182px; }   /* snug to the longest name (Pool + Concourse), minimal right padding */
 }
 @media (pointer:coarse){
   .bar{height:24px}
