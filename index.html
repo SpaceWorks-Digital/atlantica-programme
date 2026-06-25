@@ -201,7 +201,14 @@ body.hide-dates .cstart,body.hide-dates .cend,body.hide-dates .corner .dt{displa
   .topbar,.legend{display:none}
   .scroll{overflow:visible;height:auto}
   .corner,.head{background:#fff}
+  /* Export PDF: full schedule scaled (zoom keeps pagination in sync) to one A0 sheet */
+  body.pdf-export .scroll{overflow:visible}
+  body.pdf-export #inner{zoom:var(--pdf-scale,1);width:max-content}
+  body.pdf-export #pdfHeader{display:block;padding:0 0 5mm;color:var(--ink)}
+  body.pdf-export #pdfHeader .t{font-size:22px;font-weight:750}
+  body.pdf-export #pdfHeader .sub{font-size:12px;font-weight:500;color:var(--ink3);margin-top:2px}
 }
+#pdfHeader{display:none}
 </style>
 </head>
 <body>
@@ -223,7 +230,8 @@ body.hide-dates .cstart,body.hide-dates .cend,body.hide-dates .corner .dt{displa
     <button class="btn" id="expandAll">Expand</button>
     <button class="btn" id="collapseAll">Collapse</button>
     <button class="btn" id="todayBtn">Today</button>
-    <button class="btn ghost" id="exportBtn">Export</button>
+    <button class="btn ghost" id="exportXlsx">Export Excel</button>
+    <button class="btn ghost" id="exportPdf">Export PDF</button>
     <button class="btn ghost" id="importBtn">Import</button>
     <button class="btn ghost" id="printBtn">Print</button>
     <button class="btn warn" id="resetBtn">Reset</button>
@@ -235,6 +243,7 @@ body.hide-dates .cstart,body.hide-dates .cend,body.hide-dates .corner .dt{displa
   </div>
 </div>
 <div class="legend" id="legend"></div>
+<div id="pdfHeader"></div>
 <div class="scroll" id="scroll">
   <div class="inner" id="inner">
     <div class="head">
@@ -719,6 +728,102 @@ function applyTheme(){const light=state.theme==="light";document.body.classList.
 function scrollToToday(){const n=new Date(),tt=new Date(n.getFullYear(),n.getMonth(),n.getDate());
   if(tt>=projStart&&tt<=projEnd)document.getElementById("scroll").scrollLeft=xOf(tt)-200;}
 
+/* ---------------- export: shared ---------------- */
+function downloadBlob(blob,name){const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1500);}
+
+/* ---------------- export: Excel (.xlsx, dependency-free OOXML) ---------------- */
+const CRC_TABLE=(()=>{const t=[];for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0;}return t;})();
+function crc32(b){let c=0xFFFFFFFF;for(let i=0;i<b.length;i++)c=CRC_TABLE[(c^b[i])&0xFF]^(c>>>8);return (c^0xFFFFFFFF)>>>0;}
+function zipStore(files){ // store-only ZIP -> valid .xlsx
+  const u16=n=>[n&255,(n>>>8)&255],u32=n=>[n&255,(n>>>8)&255,(n>>>16)&255,(n>>>24)&255],MT=0,MD=0x21;
+  const parts=[],central=[];let offset=0;
+  for(const f of files){
+    const name=new TextEncoder().encode(f.name),data=f.data,crc=crc32(data),sz=data.length;
+    const lh=Uint8Array.from([].concat(u32(0x04034b50),u16(20),u16(0),u16(0),u16(MT),u16(MD),u32(crc),u32(sz),u32(sz),u16(name.length),u16(0)));
+    parts.push(lh,name,data);
+    central.push(Uint8Array.from([].concat(u32(0x02014b50),u16(20),u16(20),u16(0),u16(0),u16(MT),u16(MD),u32(crc),u32(sz),u32(sz),u16(name.length),u16(0),u16(0),u16(0),u16(0),u32(0),u32(offset))),name);
+    offset+=lh.length+name.length+sz;
+  }
+  let csz=0;central.forEach(c=>csz+=c.length);
+  const end=Uint8Array.from([].concat(u32(0x06054b50),u16(0),u16(0),u16(files.length),u16(files.length),u32(csz),u32(offset),u16(0)));
+  return new Blob([...parts,...central,end],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
+}
+const X_CT='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>';
+const X_RELS='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>';
+const X_WB='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Programme" sheetId="1" r:id="rId1"/></sheets></workbook>';
+const X_WBR='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>';
+function colLetter(n){let s="";n++;while(n>0){const m=(n-1)%26;s=String.fromCharCode(65+m)+s;n=Math.floor((n-1)/26);}return s;}
+function scheduleRows(){
+  const rows=[["Group","Element","Phase","Detail","Start","End","Duration (days)"]];
+  for(const g of GROUPS){
+    const gs=groupSpan(g.id);
+    rows.push([g.name,"","","",gs?iso(gs.a):"",gs?iso(gs.b):"",gs?daysIn(gs.a,gs.b):""]);
+    for(const el of orderedElements()){
+      const sp=elSpan(g.id,el.id);
+      rows.push(["",el.name,"","",sp?iso(sp.a):"",sp?iso(sp.b):"",sp?daysIn(sp.a,sp.b):""]);
+      for(const ph of phasesOf(g.id)){
+        const t=state.tasks[tkey(g.id,el.id,ph.id)];if(!t)continue;
+        rows.push(["","",ph.t1,t.label||ph.t2,t.s,t.e,daysIn(parse(t.s),parse(t.e))]);
+      }
+    }
+  }
+  return rows;
+}
+function sheetXml(rows){
+  const esc=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  let body="";
+  rows.forEach((row,r)=>{
+    let cells="";
+    row.forEach((val,c)=>{
+      if(val===""||val==null)return;
+      const ref=colLetter(c)+(r+1);
+      if(typeof val==="number"&&isFinite(val))cells+=`<c r="${ref}"><v>${val}</v></c>`;
+      else cells+=`<c r="${ref}" t="inlineStr"><is><t xml:space="preserve">${esc(val)}</t></is></c>`;
+    });
+    body+=`<row r="${r+1}">${cells}</row>`;
+  });
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><cols><col min="1" max="2" width="18"/><col min="3" max="3" width="36"/><col min="4" max="4" width="28"/><col min="5" max="7" width="13"/></cols><sheetData>${body}</sheetData></worksheet>`;
+}
+function exportExcel(){
+  const enc=new TextEncoder();
+  const files=[
+    {name:"[Content_Types].xml",data:enc.encode(X_CT)},
+    {name:"_rels/.rels",data:enc.encode(X_RELS)},
+    {name:"xl/workbook.xml",data:enc.encode(X_WB)},
+    {name:"xl/_rels/workbook.xml.rels",data:enc.encode(X_WBR)},
+    {name:"xl/worksheets/sheet1.xml",data:enc.encode(sheetXml(scheduleRows()))},
+  ];
+  downloadBlob(zipStore(files),"atlantica_programme.xlsx");
+}
+
+/* ---------------- export: PDF (full schedule fitted to one A0 sheet) ---------------- */
+function exportPdf(){
+  const prevCollapsed=state.collapsed.slice(),prevHide=state.hideDates;
+  state.collapsed=[];state.hideDates=false; // show the entire schedule incl. date columns
+  render();
+  const head=document.getElementById("pdfHeader");
+  head.innerHTML=`<div class="t">${state.title}</div><div class="sub">26.015 · Programme &amp; Phasing — ${fmtDate(projStart)} to ${fmtDate(projEnd)}</div>`;
+  const inner=document.getElementById("inner");
+  const mm=96/25.4,margin=8*mm;
+  const pageW=1189*mm-2*margin,pageH=841*mm-2*margin-90; // A0 landscape minus margins (and header allowance)
+  const scale=Math.min(pageW/inner.scrollWidth,pageH/inner.scrollHeight,1)*0.98;
+  document.documentElement.style.setProperty("--pdf-scale",scale);
+  const st=document.createElement("style");st.id="pdfPageStyle";
+  st.textContent="@page{size:1189mm 841mm;margin:8mm;}"; // A0 landscape
+  document.head.appendChild(st);
+  document.body.classList.add("pdf-export");
+  const cleanup=()=>{
+    document.body.classList.remove("pdf-export");
+    const e=document.getElementById("pdfPageStyle");if(e)e.remove();
+    document.documentElement.style.removeProperty("--pdf-scale");
+    head.innerHTML="";
+    state.collapsed=prevCollapsed;state.hideDates=prevHide;render();
+    window.removeEventListener("afterprint",cleanup);
+  };
+  window.addEventListener("afterprint",cleanup);
+  setTimeout(()=>window.print(),150);
+}
+
 function syncInputs(){document.getElementById("title").value=state.title;
   document.getElementById("projStart").value=state.start;document.getElementById("projEnd").value=state.end;
   [...document.querySelectorAll("#zoomSeg button")].forEach(b=>b.classList.toggle("on",b.dataset.z===state.zoom));}
@@ -739,8 +844,8 @@ function init(){
   document.getElementById("printBtn").onclick=()=>window.print();
   document.getElementById("resetBtn").onclick=()=>{if(confirm("Reset the programme to the seeded ATLANTICA defaults? This clears your edits."))
     {state=defaults();save();applyTheme();syncInputs();render();scrollToToday();}};
-  document.getElementById("exportBtn").onclick=()=>{const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"});
-    const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="atlantica_programme.json";a.click();URL.revokeObjectURL(a.href);};
+  document.getElementById("exportXlsx").onclick=exportExcel;
+  document.getElementById("exportPdf").onclick=exportPdf;
   document.getElementById("importBtn").onclick=()=>document.getElementById("importFile").click();
   document.getElementById("importFile").addEventListener("change",e=>{const f=e.target.files[0];if(!f)return;
     const rd=new FileReader();rd.onload=()=>{try{const j=JSON.parse(rd.result);if(j.tasks){state=migrate(j);save();applyTheme();syncInputs();render();}}catch(err){alert("Invalid JSON");}};
