@@ -470,6 +470,16 @@ function spanOf(list){if(!list.length)return null;let a=parse(list[0].s),b=parse
   for(const t of list){const s=parse(t.s),e=parse(t.e);if(s<a)a=s;if(e>b)b=e;}return{a,b};}
 function elSpan(gid,elId){return spanOf(phaseTasks(gid,elId));}
 function groupSpan(gid){let all=[];for(const el of ELEMENTS)all=all.concat(phaseTasks(gid,el.id));return spanOf(all);}
+/* full programme extent across every task (used to trim the PDF timeline) */
+function contentExtent(){let a=null,b=null;for(const k in state.tasks){const t=state.tasks[k],s=parse(t.s),e=parse(t.e);if(!a||s<a)a=s;if(!b||e>b)b=e;}return a&&b?{a,b}:null;}
+/* smallest axis-period boundary >= d, so the last task's period stays whole without adding an empty one */
+function periodEnd(d,zoom){
+  const x=new Date(d.getFullYear(),d.getMonth(),d.getDate());
+  if(zoom==="quarter"){const s=startOfQuarter(x);return +s===+x?x:addMonths(s,3);}
+  if(zoom==="month"){const s=startOfMonth(x);return +s===+x?x:addMonths(s,1);}
+  if(zoom==="week"){const s=mondayOf(x);return +s===+x?x:addDays(s,7);}
+  return x;
+}
 
 /* ---------------- RIBA 5 (design) <-> CONSTRUCTION link ----------------
    The design RIBA 5 bar and the element's construction phases describe the
@@ -799,7 +809,13 @@ function exportExcel(){
 
 /* ---------------- export: PDF (full schedule fitted to one A0 sheet) ---------------- */
 function exportPdf(){
-  // Capture the CURRENT view as-is (whatever is expanded/collapsed and the dates toggle).
+  // Capture the CURRENT view as-is (whatever is expanded/collapsed and the dates toggle),
+  // but trim the timeline to the programme's actual end so there's no trailing empty space.
+  const prevEnd=state.end;
+  const ext=contentExtent();
+  if(ext){const te=periodEnd(ext.b,state.zoom),cap=parse(prevEnd),end=te<cap?te:cap;
+    if(end>parse(state.start))state.end=iso(end);}
+  render();
   const head=document.getElementById("pdfHeader");
   head.innerHTML=`<div class="t">${state.title}</div><div class="sub">26.015 · Programme &amp; Phasing — ${fmtDate(projStart)} to ${fmtDate(projEnd)}</div>`;
   const inner=document.getElementById("inner");
@@ -816,6 +832,7 @@ function exportPdf(){
     const e=document.getElementById("pdfPageStyle");if(e)e.remove();
     document.documentElement.style.removeProperty("--pdf-scale");
     head.innerHTML="";
+    state.end=prevEnd;render();
     window.removeEventListener("afterprint",cleanup);
   };
   window.addEventListener("afterprint",cleanup);
