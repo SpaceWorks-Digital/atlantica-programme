@@ -1,5 +1,9 @@
 # ATLANTICA — Project Programme Dashboard
 
+> 📖 **The full, current handover is [`ATLANTICA_SCHEDULE_DASHBOARD_README.md`](./ATLANTICA_SCHEDULE_DASHBOARD_README.md)** —
+> it documents the dashboard as it is today (groups, theming, Excel/PDF export, the RIBA 5 ↔ Construction
+> link) and the plan for the financial/invoicing database. The note below is the original short readme.
+
 A self-contained interactive Gantt / programme dashboard for project **26.015 Atlantica Wavepool
 Cascais**. Single `index.html`, no build step, no dependencies — open it locally or host it anywhere
 static (GitHub Pages, Netlify, S3, an intranet).

@@ -1,5 +1,8 @@
 # HANDOFF — ATLANTICA Programme Dashboard
 
+> ⚠️ **Superseded.** The current, comprehensive handover is
+> [`ATLANTICA_SCHEDULE_DASHBOARD_README.md`](./ATLANTICA_SCHEDULE_DASHBOARD_README.md). This note is kept for history.
+
 Resume note for any Claude Code session (e.g. a cloud session started from the phone) that picks up
 this repo. Read this first.
 
